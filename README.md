@@ -281,4 +281,6 @@ Now visualize the complete dataset and check if any manipulations are required f
     
     dataset.head(10)
 
-Here we have completed the Feature Engineering Part. Now this dataset is perfectly eligible for applying the ML algorithm.
+Here we have completed the Feature Engineering Part. Now this dataset is perfectly eligible for applying the Machine Learning algorithm.
+
+
