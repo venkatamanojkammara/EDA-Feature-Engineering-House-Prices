@@ -172,3 +172,113 @@ Now we will observe the relation between the categorical features and the salepr
 
 Here the Exploratory Data Analysis part was completed. Next, we will go through with the Feature Engineering.
 
+# Feature Engineering for HousePrices
+
+Here in the Feature Engineering part, we will perform the following steps.
+
+1. Missing Values
+2. Temporal Variables
+3. Categorical Variables
+4. Standardise the values of the variables.
+
+Import the required Python libraries.
+    
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    %matplotlib inline
+    pd.pandas.set_option('display.max_columns',None)
+
+Now read the dataset into a variable and see the top 5 rows.
+    
+    dataset=pd.read_csv('train.csv')
+    dataset.head()
+
+Here in this Kaggle dataset, we have the train data as well as the test data. Here now we will do the train_test_split to avoid data leakage by using the sklearn.
+    
+    from sklearn.model_selection import train_test_split
+    X_train,X_test,y_train,y_test=train_test_split(dataset,dataset['SalePrice'],test_size=0.1,random_state=0)
+
+Check the shapes of the X_train and X_test for some ideas.
+
+    X_train.shape,X_test.shape
+
+Now we need to find the missing value categorical features and then we will handle them to replace the value.
+    
+    categorical_features=[feature for feature in dataset.columns if dataset[feature].isnull().sum()>1 and dataset[feature].dtype=='O']
+    categorical_features
+
+Now will see the percentage of the missing values and also the number of missing values in the above categorical features corresponding to the feature.
+    
+    for feature in categorical_features:
+      print(feature, np.round(dataset[feature].isnull().mean(),4), dataset[feature].isnull().sum())
+
+Now we will replace the missing NaN values with some other label, let's say 'missing'
+    
+    def replace_categorical_features(dataset,categorical_features):
+      data=dataset.copy()
+      data[categorical_features]=data[categorical_features].fillna("Missing")
+      return data
+    
+    dataset=replace_categorical_features(dataset,categorical_features)
+
+Now again check if there were any missing NaN values in the categorical values to confirm whether our operation was successfully performed or not.
+    
+    dataset[categorical_features].isnull().sum()
+
+Up to now the handling part of categorical features was completed. Now it's turn for the numerical features.
+    
+    numerical_features=[feature for feature in dataset.columns if dataset[feature].isnull().sum()>1 and dataset[feature].dtype !='O']
+    numerical_features
+
+Now check for the Mean percentage of the missing nan values in the numerical values.
+    
+    for feature in numerical_features:
+      print(feature,np.round(dataset[feature].isnull().mean(),4),dataset[feature].isnull().sum())
+
+Now it turns to fill the missing values. As we know there were some outliers in the numerical features hence we need to consider the median or mode. Create a new column and then place, 1 for corresponding if there were any missing values and 0 for no nan values.
+    
+    for feature in numerical_features:
+      median_value = dataset[feature].median()
+      dataset[feature+'nan']=np.where(dataset[feature].isnull(),1,0)
+      dataset[feature].fillna(median_value, inplace=True)
+
+Now again check if there were any missing NaN values in the categorical values to confirm whether our operation was successfully performed or not.
+    
+    dataset[numerical_features].isnull().sum()
+
+Now check for the complete dataset if there were any missing values in them.
+    
+    dataset.isnull().sum()
+
+Visualize the top 100 rows of the dataset.
+    
+    dataset.head(100)
+
+As we know there were some temporal variables, ie. data and time variables. In this case, we have year variables. Now we will find the year difference for the YrSold and the other year features.
+    
+    for feature in ['YearBuilt','YearRemodAdd','GarageYrBlt']:
+      dataset[feature]=dataset['YrSold']-dataset[feature]
+    
+    dataset[['YearBuilt','YearRemodAdd','GarageYrBlt']].head()
+
+As there were many numerical features and they were skewed so to make it normal we will apply the log-normal distribution to the features that do not have zero as a value in them.
+    
+    num_features=['LotFrontage','LotArea','1stFlrSF','GrLivArea','SalePrice']
+    for feature in num_features:
+      dataset[feature]=np.log(dataset[feature])
+
+Now we will find the rare categorical features.
+(The categorical variables values that are present less than 1% of the feature are rare categorical features). Here we will find those types of rare categorical features and replace them with a new label to get better results.
+    
+    categorical_features=[feature for feature in dataset.columns if dataset[feature].dtype == 'O']
+    for feature in categorical_features:
+      temp=dataset.groupby(feature)["SalePrice"].count()/len(dataset)
+      temp_df=temp[temp>0.01].index
+      dataset[feature]=np.where(dataset[feature].isin(temp_df),dataset[feature],"RareVar")
+
+Now visualize the complete dataset and check if any manipulations are required for it.
+    
+    dataset.head(10)
+
+Here we have completed the Feature Engineering Part. Now this dataset is perfectly eligible for applying the ML algorithm.
